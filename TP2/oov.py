@@ -2,7 +2,7 @@
 
 from utils import * 
 
-from pcfg import lexicon, counts_tokens
+from pcfg import lexicon, counts_tokens, list_all_symbols, nb_all_symbols
 
 ####################################################################################################
 ####################################################################################################
@@ -243,11 +243,11 @@ def tagger_oov(oov_word, viz_closest = False):
         correction = corrected_word(oov_word)
         
         if correction is None:
-            print("no corrected word (spelling) found at damerau-levenshtein distance less than 3")
-            return {tag:1/nb_terminal_symbols for tag in set_terminal_symbols}
+            if viz_closest: print("no corrected word (spelling) found at damerau-levenshtein distance less than 3")
+            return {symbol:1/nb_all_symbols for symbol in list_all_symbols}
         
         else:  
-            print(correction, " is the closest word (spelling) found among words in the lexicon or having an embedding")
+            if viz_closest: print(correction, " is the closest word (spelling) found among words in the lexicon or having an embedding")
 
             if correction in words_lexicon: #if corrected word in corpus
                 if viz_closest: print(correction, " is a word in the lexicon")
@@ -259,11 +259,11 @@ def tagger_oov(oov_word, viz_closest = False):
                 return lexicon[closest_corpus_word]
 
 
-def tagger(word, viz_closest = False):
+def tagger(word, viz_oov = False):
     if word in lexicon:
         return lexicon[word]
     else:
-        if viz_closest: print(word," is an OOV")
-        return tagger_oov(word, viz_closest = viz_closest)
+        if viz_oov: print(word," is an OOV")
+        return tagger_oov(word, viz_closest = viz_oov)
 
 

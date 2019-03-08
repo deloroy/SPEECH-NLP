@@ -3,7 +3,7 @@ from utils import *
 from load_data import corpus_train
 
 # Extracting a PCGF from the training corpus
-
+        
 def add(dico, word, tag): 
     #incrementing dico[word][tag], word is a string, tag is a string or a list (will be converted to a tuple in such case)
     
@@ -16,14 +16,6 @@ def add(dico, word, tag):
             dico[word][tag] = 1
     else:
         dico[word] = {tag:1}
-        
-def non_functional_tag(functional_tag):
-    tag = ""
-    for caract in functional_tag:
-        if caract=="-":
-            break
-        tag+=caract
-    return tag
 
 ############################################################################
 
@@ -95,6 +87,88 @@ def PGFG(corpus, normalized_counts=True, return_counts_tokens=False):
     else:
         return grammar, lexicon
 
+############################################################################
+#FOR NORMALIZATION
+
+def apply_BIN_rule(grammar):
+    #apply BIN RULE (eliminate right-hand sides with more than 2 nonterminals)
+    
+    grammar0 = deepcopy(grammar)
+    
+    max_idx_new_symbol = 0
+    
+    for (root_tag, rules) in grammar0.items():
+        #root_tag is the left hand symbol of the grammar rule
+        #rules are the PCFC rules for derivation of root_tag
+
+        for (list_tags, counts) in rules.items():
+            #print(list_tags)
+            nb_consecutive_tags = len(list_tags)
+            
+            if nb_consecutive_tags>2:                
+                del grammar[root_tag][list_tags]
+                
+                symbol = "NEW_" + str(max_idx_new_symbol)
+                grammar[root_tag][(list_tags[0],symbol)] = counts
+                max_idx_new_symbol += 1
+                #print(root_tag,list_tags[0],symbol)
+                
+                for k in range(1,nb_consecutive_tags-2):
+                    new_symbol = "NEW_" + str(max_idx_new_symbol)
+                    grammar[symbol] = {(list_tags[k],new_symbol): counts}
+                    max_idx_new_symbol += 1
+                    #print(symbol,list_tags[k],new_symbol)
+                    symbol = new_symbol
+                #print(symbol,list_tags[-2],list_tags[-1])
+                
+                grammar[symbol] = {(list_tags[-2],list_tags[-1]): counts}
+
+def apply_UNIT_rule(grammar, lexicon):
+    
+    grammar0 =  deepcopy(grammar)
+    lexicon0 =  deepcopy(lexicon)
+    
+    #apply UNIT rule (eliminate unit rules)
+    
+    for (root_tag, rules) in grammar0.items():
+        #root_tag is the left hand symbol of the grammar rule
+        #rules are the PCFC rules for derivation of root_tag
+
+        for (list_tags, counts) in rules.items():
+            
+            if len(list_tags)==1: #unit rule A->B
+                
+                child_tag = list_tags[0]
+                #print(root_tag,child_tag)
+
+                del grammar[root_tag][list_tags]
+                
+                freq = counts/(np.sum(list(grammar[root_tag].values())))
+                
+                for (word, tags) in lexicon0.items():
+                    for (tag, counts_as_tag) in tags.items():
+                        if tag == child_tag:
+                            #print(lexicon[word])
+                            lexicon[word][root_tag] = counts_as_tag * freq #lexicon[word][A] = freq(A->B) * counts(B)
+                            #print(lexicon[word])
+                            
+
+def binarize_PCFG(grammar, lexicon):
+    #grammar with counts(not probas) !!!
+    #cf. https://en.wikipedia.org/wiki/Chomsky_normal_form
+    
+    #convert into Chomsky_normal_form
+        
+    #no need for START RULE (tag 'SENT' is already always at the left)
+    #no need for TERM RULE (eliminate rules with nonsolitary terminals)
+        
+    #apply BIN RULE (eliminate right-hand sides with more than 2 nonterminals)
+    apply_BIN_rule(grammar)
+    
+    #apply UNIT rule (eliminate unit rules)
+    apply_UNIT_rule(grammar, lexicon)
+
+    #no need for DEL rules (no such cases)
 
 ############################################################################
 
@@ -103,28 +177,31 @@ print("")
 
 #grammar, lexicon, counts_tokens = PGFG(corpus_train,normalized_counts=True,return_counts_tokens=True)
 grammar_counts, lexicon_counts, counts_tokens = PGFG(corpus_train, normalized_counts=False,return_counts_tokens=True)
+
+binarize_PCFG(grammar_counts, lexicon_counts)
+
+grammar = normalize_counts(grammar_counts)
 lexicon = normalize_counts(lexicon_counts)
 
-#print(grammar_counts)
-#print(counts_tokens)
-#print(np.sum(list(grammar['COORD'].values())))
-#print(grammar)
-#print(grammar['SENT'])
+list_all_symbols = all_symbols(grammar)
 
-set_terminal_symbols = all_terminal_symbols(lexicon)
-nb_terminal_symbols = len(set_terminal_symbols)
+#rewriting list_all_symbols to have first the tags of list_tags and then the artificial symbols
+list_artificial_symbols = []
+list_tags = []
+for s in list_all_symbols:
+    if s[:3]!="NEW":
+       list_tags.append(s) 
+    else:
+       list_artificial_symbols.append(s) 
 
-set_all_symbols = all_symbols(grammar_counts)
-nb_all_symbols = len(set_all_symbols)
+list_all_symbols = list_tags + list_artificial_symbols
+nb_tags = len(list_tags)
+nb_all_symbols = len(list_all_symbols)
 
-print("list of all symbols")
-print(set_all_symbols)
-print("")
+#print("list of tags")
+#print(list(list_tags))
+#print("")
 
-print("list of terminal symbols")
-print(set_terminal_symbols)
-print("")
-
-print("##################################")
-print("")
-
+#print("list of all symbols")
+#print(list(list_all_symbols))
+#print("")

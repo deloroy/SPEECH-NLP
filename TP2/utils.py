@@ -31,12 +31,14 @@ def sentence(postag):
     return ' '.join(sent)
 
 
+def non_functional_tag(functional_tag):
+    tag = ""
+    for caract in functional_tag:
+        if caract=="-":
+            break
+        tag+=caract
+    return tag
 
-def all_terminal_symbols(lexicon):
-    res =  []
-    for (word,tags) in lexicon.items():
-        res += list(tags.keys())
-    return np.unique(res)
 
 def all_symbols(grammar):
     #replace by set
@@ -46,7 +48,7 @@ def all_symbols(grammar):
         for list_tags in rules.keys():
             for tag in list_tags:
                 res.append(tag)
-    return np.unique(res)
+    return list(np.unique(res))
 
 
 
