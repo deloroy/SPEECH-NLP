@@ -10,6 +10,7 @@ class Meaning_Search_Engine():
 
     def __init__(self, words_lexicon, list_all_symbols, words_with_embeddings, embeddings):
 
+        self.list_all_symbols = list_all_symbols
         self.nb_all_symbols = len(list_all_symbols)
 
         self.words_lexicon = words_lexicon
@@ -34,7 +35,6 @@ class Meaning_Search_Engine():
             word = normalize(word, self.words_with_embeddings_id)
             if not (word is None):
                 words_lexicon_in_corpus.append(word)
-                word_index = self.words_with_embeddings_id[word]
                 id_word = self.words_with_embeddings_id[word]
                 if self.embeddings_lexicon is None:
                     self.embeddings_lexicon = self.embeddings[id_word]
@@ -195,7 +195,7 @@ class OOV_Tagger():
 
             if correction is None:
                 if viz_closest: print("no corrected word (spelling) found at damerau-levenshtein distance less than 3")
-                return {symbol:1/self.nb_all_symbols for symbol in self.list_all_symbols}
+                return {symbol:1/self.Meaning_Search_Engine.nb_all_symbols for symbol in self.Meaning_Search_Engine.list_all_symbols}
 
             else:
                 if viz_closest: print(correction, " is the closest word (spelling) found among words in the lexicon or having an embedding")

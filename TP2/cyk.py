@@ -114,22 +114,37 @@ class CYK_Parser():
     def remove_artificial_symbols(self, T):
         #removing artificial symbols from T tree storing the parsing of the sentence
 
-        print(T.nodes(data=True))
         nodes = deepcopy(T.nodes)
         for node in nodes:
             children = list(T.successors(node))
             if len(children)==0: pass
-            elif len(children)==1 and len(list(T.successors(children[0]))) == 0: pass
+            elif len(children)==1 and len(list(T.successors(children[0]))) == 0:
+                symbol = T.nodes[node]["name"]
+
+                if (self.symbol_to_id[symbol] >= self.PCFG.nb_tags) and ("+" in symbol): #artificial symbol from UNIT rule
+                    word = children[0]
+
+                    idx_cut = [idx for (idx,c) in enumerate(symbol) if c=="+"]
+                    T.nodes[node]["name"] = symbol[:idx_cut]
+
+                    idx_pre_terminal_node = len(T.nodes)
+                    T.add_node(idx_pre_terminal_node, name=symbol[idx_cut+1:])
+
+                    T.remove_edge(node, word)
+                    print("removed edge : ", (node, word))
+                    T.add_edge(node,idx_pre_terminal_node)
+                    T.add_edge(idx_pre_terminal_node,word)
+
             else:
                 father = list(T.predecessors(node))
                 if len(father)==0: pass
                 else:
-                    if self.symbol_to_id[T.nodes[node]["name"]] >= self.PCFG.nb_tags:  # artificial symbol
+                    symbol = T.nodes[node]["name"]
+                    if (self.symbol_to_id[symbol] >= self.PCFG.nb_tags) and ("|" in symbol):  # artificial symbol from BIN rule
                         for child in T.successors(node):
                             T.add_edge(father[0],child)
-                        print(node,T.nodes[node]["name"])
+                        print("removed node : ",node,T.nodes[node]["name"])
                         T.remove_node(node)
-        print(T.nodes(data=True))
 
 
     def reformat_parsing(self, parsing):
@@ -155,22 +170,18 @@ class CYK_Parser():
 
         max_proba_derivation, split_reaching_max = self.compute_CYK_tables(sentence, viz_oov=viz_oov)
 
-        # idx_root_tag = np.argmax(max_proba_derivation[0,nb_words,:])
         idx_root_tag = self.symbol_to_id["SENT"]
-        # rq ca devrait etre toujours S_0 à ce point !!!
 
         parsing_list = self.parse_substring(0, nb_words - 1, idx_root_tag, sentence, max_proba_derivation, split_reaching_max)
 
-        #parsing_list = ["SENT", parsing_list]
-
         if remove_artificial_symbols:
-            from utils_draw_tree import build_tree, postagged_sent
+            from utils_tree import postagged_sent_to_tree, tree_to_postagged_sent
             from networkx import topological_sort
 
-            T = build_tree("( (SENT " +self.reformat_parsing(parsing_list)+"))")
+            T = postagged_sent_to_tree("( (SENT " +self.reformat_parsing(parsing_list)+"))", remove_after_hyphen=False)
             self.remove_artificial_symbols(T)
             root = list(topological_sort(T))[0]
-            return "( " + postagged_sent(T,root) + ")"
+            return "( " + tree_to_postagged_sent(T,root) + ")"
 
         else:
             return "( (SENT " + self.reformat_parsing(parsing_list) + "))" #res = parsing_dico

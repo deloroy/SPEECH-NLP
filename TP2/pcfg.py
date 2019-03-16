@@ -16,18 +16,12 @@ class PCFG():
         # storing the list of symbols (only tags, and with all artificial symbols)
 
         list_all_symbols = all_symbols(self.grammar)
+        self.list_artificial_symbols = list(self.set_artificial_symbols)
+        self.list_tags = list(set(list_all_symbols).difference(self.set_artificial_symbols))
 
-        list_artificial_symbols = []
-        list_tags = []
-        for s in list_all_symbols:
-            if s[:3] != "NEW":
-                list_tags.append(s)
-            else:
-                list_artificial_symbols.append(s)
-
-        self.list_all_symbols = list_tags + list_artificial_symbols
-        self.nb_tags = len(list_tags)
-        self.nb_all_symbols = len(list_all_symbols)
+        self.list_all_symbols = self.list_tags + self.list_artificial_symbols
+        self.nb_tags = len(self.list_tags)
+        self.nb_all_symbols = len(self.list_all_symbols)
 
     def extract_from_corpus(self, corpus):
 
@@ -91,6 +85,8 @@ class PCFG():
         # no need for START RULE (tag 'SENT' is already always at the left)
         # no need for TERM RULE (eliminate rules with nonsolitary terminals)
 
+        self.set_artificial_symbols = set()
+
         # apply BIN RULE (eliminate right-hand sides with more than 2 nonterminals)
         self.apply_BIN_rule()
 
@@ -115,33 +111,32 @@ class PCFG():
 
         grammar0 = deepcopy(self.grammar)
 
-        max_idx_new_symbol = 0
-
         for (root_tag, rules) in grammar0.items():
             #root_tag is the left hand symbol of the grammar rule
             #rules are the PCFC rules for derivation of root_tag
 
             for (list_tags, counts) in rules.items():
-                #print(list_tags)
                 nb_consecutive_tags = len(list_tags)
 
                 if nb_consecutive_tags>2:
                     del self.grammar[root_tag][list_tags]
+                    #print(list_tags)
 
-                    symbol = "NEW_" + str(max_idx_new_symbol)
-                    self.grammar[root_tag][(list_tags[0],symbol)] = counts
-                    max_idx_new_symbol += 1
-                    #print(root_tag,list_tags[0],symbol)
+                    symbol = root_tag + "|" + '-'.join(list_tags[1:])
+                    self.set_artificial_symbols.add(symbol)
+                    add(self.grammar, root_tag, (list_tags[0],symbol), counts=counts)
+                    #print(root_tag, (list_tags[0],symbol))
 
                     for k in range(1,nb_consecutive_tags-2):
-                        new_symbol = "NEW_" + str(max_idx_new_symbol)
-                        self.grammar[symbol] = {(list_tags[k],new_symbol): counts}
-                        max_idx_new_symbol += 1
-                        #print(symbol,list_tags[k],new_symbol)
+                        new_symbol = root_tag + "|" + '-'.join(list_tags[k+1:])
+                        self.set_artificial_symbols.add(new_symbol)
+                        add(self.grammar, symbol, (list_tags[k],new_symbol), counts=counts)
+                        #print(symbol, (list_tags[k],new_symbol))
                         symbol = new_symbol
-                    #print(symbol,list_tags[-2],list_tags[-1])
 
-                    self.grammar[symbol] = {(list_tags[-2],list_tags[-1]): counts}
+                    add(self.grammar, symbol, (list_tags[-2],list_tags[-1]), counts=counts)
+                    #print(symbol, (list_tags[-2],list_tags[-1]))
+                    #print("")
 
     def apply_UNIT_rule(self):
 
@@ -149,6 +144,8 @@ class PCFG():
         lexicon0 =  deepcopy(self.lexicon)
 
         #apply UNIT rule (eliminate unit rules)
+
+        rules_to_remove = []
 
         for (root_tag, rules) in grammar0.items():
             #root_tag is the left hand symbol of the grammar rule
@@ -159,9 +156,10 @@ class PCFG():
                 if len(list_tags)==1: #unit rule A->B
 
                     child_tag = list_tags[0]
-                    #print(root_tag,child_tag)
+                    rules_to_remove.append((root_tag,list_tags))
 
-                    del self.grammar[root_tag][list_tags]
+                    symbol = root_tag + "+" + child_tag
+                    self.set_artificial_symbols.add(symbol)
 
                     freq = counts/(np.sum(list(self.grammar[root_tag].values())))
 
@@ -169,5 +167,9 @@ class PCFG():
                         for (tag, counts_as_tag) in tags.items():
                             if tag == child_tag:
                                 #print(self.lexicon[word])
-                                self.lexicon[word][root_tag] = counts_as_tag * freq #self.lexicon[word][A] = freq(A->B) * counts(B)
+                                self.lexicon[word][symbol] = counts_as_tag * freq #self.lexicon[word][A+B] = freq(A->B) * counts(B)
+                                #print("")
                                 #print(self.lexicon[word])
+
+        for (left, right) in rules_to_remove:
+            del self.grammar[left][right]

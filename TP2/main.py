@@ -28,8 +28,15 @@ Parser = CYK_Parser(corpus_train)
 
 
 
-print(len(Parser.PCFG.list_all_symbols[:Parser.PCFG.nb_tags]), " grammatical tags")
-print(len(Parser.PCFG.list_all_symbols[Parser.PCFG.nb_tags:]), " symbols (with artificial ones)")
+nb_tags = len(Parser.PCFG.list_all_symbols[:Parser.PCFG.nb_tags])
+nb_total = len(Parser.PCFG.list_all_symbols)
+nb_artificial = nb_total-nb_tags
+nb_artificial_bin = len([r for r in Parser.PCFG.list_all_symbols[Parser.PCFG.nb_tags:] if "|" in r])
+print(nb_tags, " grammatical tags")
+print(nb_artificial, " artificial symbols")
+print(nb_artificial_bin, " artificial symbols from BIN rule")
+print(nb_artificial-nb_artificial_bin, " artificial symbols from UNIT rule")
+print(nb_total, " symbols (tags and artificial ones)")
 
 print("")
 
@@ -99,5 +106,5 @@ for bool in bools:
     parsing = Parser.parse(sent, remove_artificial_symbols=bool, viz_oov = True)
     print(parsing)
 
-    from utils_draw_tree import draw_tree
+    from utils_tree import draw_tree
     draw_tree(parsing)

@@ -54,18 +54,18 @@ def all_symbols(grammar):
 
 
 
-def add(dico, word, tag):
+def add(dico, word, tag, counts = 1):
     # incrementing dico[word][tag], word is a string, tag is a string or a list (will be converted to a tuple in such case)
 
     if type(tag) == list:
         tag = tuple(tag)
     if word in dico.keys():
         if tag in dico[word].keys():
-            dico[word][tag] += 1
+            dico[word][tag] += counts
         else:
-            dico[word][tag] = 1
+            dico[word][tag] = counts
     else:
-        dico[word] = {tag: 1}
+        dico[word] = {tag: counts}
 
 def normalize_counts(dico):
     #convert counts to probabilities
