@@ -39,15 +39,29 @@ Otherwise you might face sparsity issues.
 If you need more information about PCFGs and/or CYK algorithm, read the most recent version of Jurafsky and Martin's chapter on Syntactic Parsing.
 Assignment deliverable
 
+
+
+
+
 Your assignment will be sent in the form of a folder named according to the pattern MVA_TD2_LASTNAME_Firstname that contains two elements:
 
-    a report (at least 1 full page, at most 2 full pages, font size 11pt, reasonable margins, PDF format, in English or French) named MVA_TD2_LASTNAME_Firstname_report.pdf containing 2 sections:
-        a first section describing your work, how things work, and the rationale behind the choices you made,
-        a second section with a brief error analysis: what seems to work, what does not? Any idea why? What would you suggest to improve your system?
+   1) a report (at least 1 full page, at most 2 full pages, font size 11pt, reasonable margins, PDF format, in English or French) named MVA_TD2_LASTNAME_Firstname_report.pdf containing 2 sections:
+
+       a first section describing your work, how things work, and the rationale behind the choices you made,
+
+       a second section with a brief error analysis: what seems to work, what does not? Any idea why? What would you 
+suggest to improve your system?
     a folder named system containing your system. This folder will contain three files:
-        a shell script named run.sh that reads tokenised text on the standard input (one sentence per line, exactly one whitespace between each token, as explained above)
-        a README file describing other options or argument to run.sh (or explicitly stating the absence thereof)
-        the output of your parser on the evaluation dataset (the last 10% of the provided treebank). Of course, the input to your parser will be the evaluation dataset from which you will have first removed all annotations, only retaining the raw tokens. This file will be named evaluation_data.parser_output
+
+   2)    a shell script named run.sh that reads tokenised text on the standard input (one sentence per line, exactly one whitespace between each token, as explained above)
+
+   3)    a README file describing other options or argument to run.sh (or explicitly stating the absence thereof)
+
+    4)    the output of your parser on the evaluation dataset (the last 10% of the provided treebank). Of course, the input to your parser will be the evaluation dataset from which you will have first removed all annotations, only retaining the raw tokens. This file will be named evaluation_data.parser_output
+
+
+
+
 
 Handing the assignment
 

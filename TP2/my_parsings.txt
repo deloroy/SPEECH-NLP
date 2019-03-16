@@ -1,0 +1,1 @@
+(SENT (NP (NC Affaire) (PP (P+D des) (NP (NC marchés) (AP (ADJ publics) (PP (P d') (NP (NC Ile-de-France))))))) (PONCT .))

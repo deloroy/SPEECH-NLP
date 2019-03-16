@@ -2,15 +2,7 @@
 
 #https://cs.brown.edu/courses/csci1460/assets/files/parsing.pdf
 
-import pandas as pd
-import numpy as np
-import math
-
-import pickle
-from operator import itemgetter
-import re
-
-from copy import deepcopy
+from imports import *
 
 path_to_data = "data/"
 
@@ -29,7 +21,6 @@ def sentence(postag):
                 word += caract
             sent.append(word)
     return ' '.join(sent)
-
 
 
 
@@ -101,8 +92,9 @@ def case_normalizer(word, dictionary):
         return w
     return word
 
+DIGITS = re.compile("[0-9]", re.UNICODE)
+
 def normalize(word, word_id):
-    DIGITS = re.compile("[0-9]", re.UNICODE)
     """ Find the closest alternative in case the word is OOV."""
     if not word in word_id:
         word = DIGITS.sub("#", word)

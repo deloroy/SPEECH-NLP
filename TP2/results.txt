@@ -1,0 +1,17 @@
+# Score Result
+| ID | length | state | recall | prec | matched_brackets | gold_brackets | test_brackets | cross_brackets | words | correct_tags | tag_accracy |
+|---:|-------:|------:|-------:|-----:|-----------------:|--------------:|--------------:|---------------:|------:|-------------:|------------:|
+|   0|       7|      0|    0.86|  0.86|                 6|              7|              7|               0|      7|             6|         0.86|
+
+=================================================================================================================================================
+Number of sentence:	1.00
+Number of Error sentence:	0.00
+Number of Skip  sentence:	0.00
+Number of Valid sentence:	1.00
+Bracketing Recall:	85.71
+Bracketing Precision:	85.71
+Bracketing FMeasure:	85.71
+Complete match:	0.00
+Average crossing:	0.00
+No crossing:	100.00
+Tagging accuracy:	85.71

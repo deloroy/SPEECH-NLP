@@ -1,8 +1,4 @@
-import networkx as nx
-from networkx.drawing.nx_agraph import write_dot, graphviz_layout
 from utils import *
-import matplotlib.pyplot as plt
-
 
 def postagged_sent_to_tree(postagged_sent, remove_after_hyphen=True):
     max_id_node = 0
@@ -64,16 +60,20 @@ def postagged_sent_to_tree(postagged_sent, remove_after_hyphen=True):
 
     return g
 
-def tree_to_postagged_sent(T, node):
+def tree_to_postagged_sent_rec(T, node):
     children = list(T.successors(node))
     if (len(children) == 1) and (len(list(T.successors(children[0]))) == 0):
         return "(" + T.nodes[node]["name"] + " " + T.nodes[children[0]]["name"] + ")"
     else:
         res = "(" + T.nodes[node]["name"]
         for child in sorted(children):
-            res += " " + tree_to_postagged_sent(T, child)
+            res += " " + tree_to_postagged_sent_rec(T, child)
         res += ")"
         return res
+
+def tree_to_postagged_sent(T):
+    root = list(nx.topological_sort(T))[0]
+    return "( " + tree_to_postagged_sent_rec(T, root) + ")"
 
 def draw_tree(postagged_sent):
     g = postagged_sent_to_tree(postagged_sent)
@@ -81,4 +81,3 @@ def draw_tree(postagged_sent):
     plt.figure(figsize=(12,12))
     nx.draw(g, labels = nx.get_node_attributes(g, "name"), arrows=False, pos=graphviz_layout(g, prog='dot'))
     plt.show()
-    
