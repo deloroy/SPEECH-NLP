@@ -85,7 +85,7 @@ postagged_sent = corpus_test[1]
 
 print("Sentence")
 #sent = sentence(postagged_sent)
-sent = "Il demande le renvoi ."
+sent = "La cours a demandé la cours ."
 print(sent)
 print("")
 
@@ -93,9 +93,11 @@ print("")
 #print(postagged_sent)
 #print("")
 
-print("My parsing : ")
-parsing = Parser.parse(sent, viz_oov = True)
-print(parsing)
+bools = [True] #, False
+for bool in bools:
+    print("My parsing : ")
+    parsing = Parser.parse(sent, remove_artificial_symbols=bool, viz_oov = True)
+    print(parsing)
 
-from utils_draw_tree import draw_tree
-draw_tree(parsing)
+    from utils_draw_tree import draw_tree
+    draw_tree(parsing)

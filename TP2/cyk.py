@@ -1,13 +1,7 @@
 from utils import *
-import math
-import matplotlib.pyplot as plt
 
 from pcfg import PCFG
 from oov import Tagger
-
-
-#EPS = math.pow(10, -10)
-
 
 class CYK_Parser():
 
@@ -117,42 +111,25 @@ class CYK_Parser():
                     [right_tag, self.parse_substring(s + cut + 1, l - cut - 1, idx_right_tag, sentence, max_proba_derivation,
                                                 split_reaching_max)]]
 
+    def remove_artificial_symbols(self, T):
+        #removing artificial symbols from T tree storing the parsing of the sentence
 
-    def remove_artificial_symbols(self, parsing_dico):
-        if type(parsing_dico) == str:
-            return parsing_dico
-        else:
-            new_parsing_dico = []
-            for el in parsing_dico:
-                root_tag = el[0]
-                rules = el[1]
-                if self.symbol_to_id[root_tag] >= self.PCFG.nb_tags:  # artificial symbol
-                    dico = self.remove_artificial_symbols(rules)
-                    new_parsing_dico.append(dico)
+        print(T.nodes(data=True))
+        nodes = deepcopy(T.nodes)
+        for node in nodes:
+            children = list(T.successors(node))
+            if len(children)==0: pass
+            elif len(children)==1 and len(list(T.successors(children[0]))) == 0: pass
+            else:
+                father = list(T.predecessors(node))
+                if len(father)==0: pass
                 else:
-                    new_parsing_dico.append([root_tag, rules])
-            return new_parsing_dico
-
-
-    def parsing(self, sentence, viz_oov=False):
-        sentence = sentence.split()
-
-        nb_words = len(sentence)
-
-        max_proba_derivation, split_reaching_max = self.compute_CYK_tables(sentence, viz_oov=viz_oov)
-
-        # idx_root_tag = np.argmax(max_proba_derivation[0,nb_words,:])
-        idx_root_tag = self.symbol_to_id["SENT"]
-        # rq ca devrait etre toujours S_0 à ce point !!!
-
-        parsing_dico = self.parse_substring(0, nb_words - 1, idx_root_tag, sentence, max_proba_derivation, split_reaching_max)
-
-        print(parsing_dico)
-
-        # res = remove_artificial_symbols(parsing_dico)
-        res = parsing_dico
-
-        return res
+                    if self.symbol_to_id[T.nodes[node]["name"]] >= self.PCFG.nb_tags:  # artificial symbol
+                        for child in T.successors(node):
+                            T.add_edge(father[0],child)
+                        print(node,T.nodes[node]["name"])
+                        T.remove_node(node)
+        print(T.nodes(data=True))
 
 
     def reformat_parsing(self, parsing):
@@ -171,5 +148,31 @@ class CYK_Parser():
             return string
 
 
-    def parse(self, sentence, viz_oov=False):
-        return "( (SENT " + self.reformat_parsing(self.parsing(sentence, viz_oov=viz_oov)) + "))"
+    def parse(self, sentence, remove_artificial_symbols = True, viz_oov=False):
+        sentence = sentence.split()
+
+        nb_words = len(sentence)
+
+        max_proba_derivation, split_reaching_max = self.compute_CYK_tables(sentence, viz_oov=viz_oov)
+
+        # idx_root_tag = np.argmax(max_proba_derivation[0,nb_words,:])
+        idx_root_tag = self.symbol_to_id["SENT"]
+        # rq ca devrait etre toujours S_0 à ce point !!!
+
+        parsing_list = self.parse_substring(0, nb_words - 1, idx_root_tag, sentence, max_proba_derivation, split_reaching_max)
+
+        #parsing_list = ["SENT", parsing_list]
+
+        if remove_artificial_symbols:
+            from utils_draw_tree import build_tree, postagged_sent
+            from networkx import topological_sort
+
+            T = build_tree("( (SENT " +self.reformat_parsing(parsing_list)+"))")
+            self.remove_artificial_symbols(T)
+            root = list(topological_sort(T))[0]
+            return "( " + postagged_sent(T,root) + ")"
+
+        else:
+            return "( (SENT " + self.reformat_parsing(parsing_list) + "))" #res = parsing_dico
+
+
