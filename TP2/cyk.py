@@ -138,33 +138,8 @@ class CYK_Parser():
     def remove_artificial_symbols(self, T):
         #removing artificial symbols from T tree storing the parsing of the sentence
 
-        '''
-        nodes = deepcopy(T.nodes)
-        for node in nodes:
-            children = list(T.successors(node))
-            if len(children)==0: pass
-            elif len(children)==1 and len(list(T.successors(children[0]))) == 0:
-                symbol = T.nodes[node]["name"]
-
-                if (self.symbol_to_id[symbol] >= self.PCFG.nb_tags) and ("&" in symbol): #artificial symbol from UNIT rule
-                    word = children[0]
-
-                    idx_cut = None
-                    for (idx,c) in enumerate(symbol):
-                        if c=="&":
-                            idx_cut = idx
-
-                    T.nodes[node]["name"] = symbol[:idx_cut]
-
-                    idx_pre_terminal_node = len(T.nodes)
-                    T.add_node(idx_pre_terminal_node, name=symbol[idx_cut+1:])
-
-                    T.remove_edge(node, word)
-                    #print("removed edge : ", (node, word))
-                    T.add_edge(node,idx_pre_terminal_node)
-                    T.add_edge(idx_pre_terminal_node,word)
-        '''
-
+        #debinarize : remove artificial symbols of type X|X1X2X3 (from BIN rule)
+        #merging children of an artificial symbol to its father
         nodes = deepcopy(T.nodes)
         for node in nodes:
             children = list(T.successors(node))
@@ -172,7 +147,7 @@ class CYK_Parser():
             elif len(children)==1 and len(list(T.successors(children[0]))) == 0: pass
             else:
                 father = list(T.predecessors(node))
-                if len(father)==0: pass
+                if len(father)==0: root=node
                 else:
                     symbol = T.nodes[node]["name"]
                     if (self.symbol_to_id[symbol] >= self.PCFG.nb_tags) and ("|" in symbol):  # artificial symbol from BIN rule
@@ -181,9 +156,35 @@ class CYK_Parser():
                         #print("removed node : ",node,T.nodes[node]["name"])
                         T.remove_node(node)
 
-        print(T.nodes(data=True))
-        print(T.edges())
+        #add pre_terminal symbols : remove artificial symbols of type A&B (from UNIT rule)
+        #decompositing A&B into two symbols A and B (A father of B father of word)
+        max_id_node = np.max(T.nodes())
+        nodes = deepcopy(T.nodes)
+        for node in nodes: 
+            #pas la root 
+            children = list(T.successors(node))
+            if len(children) == 0 or node==root: pass
+            elif len(children) == 1 and len(list(T.successors(children[0]))) == 0:
+                symbol = T.nodes[node]["name"]
 
+                if (self.symbol_to_id[symbol] >= self.PCFG.nb_tags) and ("&" in symbol):  # artificial symbol from UNIT rule
+                    word = children[0]
+
+                    idx_cut = None
+                    for (idx, c) in enumerate(symbol):
+                        if c == "&":
+                            idx_cut = idx
+
+                    T.nodes[node]["name"] = symbol[:idx_cut]
+
+                    idx_pre_terminal_node = max_id_node+1
+                    T.add_node(idx_pre_terminal_node, name=symbol[idx_cut + 1:])
+                    max_id_node += 1
+
+                    T.remove_edge(node, word)
+                    # print("removed edge : ", (node, word))
+                    T.add_edge(node, idx_pre_terminal_node)
+                    T.add_edge(idx_pre_terminal_node, word)
 
 
 
@@ -215,10 +216,9 @@ class CYK_Parser():
         parsing_list = self.parse_substring(0, nb_words - 1, idx_root_tag, sentence, max_proba_derivation, split_reaching_max)
 
         if remove_artificial_symbols:
-            print(parsing_list)
             T = postagged_sent_to_tree("( (SENT " +self.reformat_parsing(parsing_list)+"))", remove_after_hyphen=False)
-            nx.draw(T, labels=nx.get_node_attributes(T, "name"), arrows=False, pos=graphviz_layout(T, prog='dot'))
-            plt.show()
+            #nx.draw(T, labels=nx.get_node_attributes(T, "name"), arrows=False, pos=graphviz_layout(T, prog='dot'))
+            #plt.show()
             self.remove_artificial_symbols(T)
             return tree_to_postagged_sent(T)
 

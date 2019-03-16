@@ -79,18 +79,14 @@ for human_parsing in corpus_test[0:10]:
     print("Done in " + str(round(tac - tic, 2)) + "s")
     print("")
 
-    gold_parsing = gold_parsings[2:-1] #EVALPB works if sentence begins by (SENT and ends with )
-    my_parsing = my_parsing[2:-1] #EVALPB works if sentence begins by (SENT and ends with )
-    gold_parsings.append(gold_parsing)
-    my_parsings.append(my_parsing)
-
-
-
-    print("##############################")
-
-    if True:
+    if False:
         from utils_tree import draw_tree
         draw_tree(my_parsing)
+
+    gold_parsing = gold_parsing[2:-1]  # EVALPB works if sentence begins by (SENT and ends with )
+    my_parsing = my_parsing[2:-1]  # EVALPB works if sentence begins by (SENT and ends with )
+    gold_parsings.append(gold_parsing)
+    my_parsings.append(my_parsing)
 
     print("Score PYEVALB :")
     gold_tree = PYEVALB_parser.create_from_bracket_string(gold_parsing)
@@ -98,6 +94,8 @@ for human_parsing in corpus_test[0:10]:
     result = PYEVALB_scorer.Scorer().score_trees(gold_tree, test_tree)
     print('Recall =' + str(result.recall))
     print('Precision =' + str(result.prec))
+
+    print("##############################")
 
 with open('gold_parsings.txt', 'w') as f:
     for item in gold_parsings:
