@@ -23,11 +23,11 @@ file_corpus.close()
 #Splitting corpus into train/dev/test set
 frac_train = 0.8
 frac_dev = 0.1
-frac_test = 1-frac_train-frac_dev
+frac_test = 0.1
 
 N = len(corpus)
-nb_train = int(N*frac_train)
-nb_dev = int(N*frac_dev)
+nb_train = int(round(N*frac_train))
+nb_dev = int(round(N*frac_dev))
 
 corpus_train = corpus[:nb_train]
 corpus_dev = corpus[nb_train:nb_train+nb_dev]
@@ -65,9 +65,7 @@ print("##############################")
 gold_parsings = []
 my_parsings = []
 
-for (idx_sentence,human_parsing) in enumerate(corpus_test[len(corpus_test)-99]):
-
-    print(human_parsing)
+for (idx_sentence,human_parsing) in enumerate(corpus_test):
 
     T = postagged_sent_to_tree(human_parsing, remove_after_hyphen=True)
     gold_parsing = tree_to_postagged_sent(T) #removing functions in tags (parts after hyphen)
@@ -109,7 +107,7 @@ for (idx_sentence,human_parsing) in enumerate(corpus_test[len(corpus_test)-99]):
 
     print("##############################")
 
-    if idx_sentence%3==0:
+    if idx_sentence%50==0:
 
         with open('gold_parsings.txt', 'w') as f:
             for item in gold_parsings:
@@ -119,6 +117,15 @@ for (idx_sentence,human_parsing) in enumerate(corpus_test[len(corpus_test)-99]):
                 f.write("%s\n" % item)
 
         PYEVALB_scorer.Scorer().evalb('gold_parsings.txt','my_parsings.txt', 'results.txt')
+
+with open('gold_parsings.txt', 'w') as f:
+    for item in gold_parsings:
+        f.write("%s\n" % item)
+with open('my_parsings.txt', 'w') as f:
+    for item in my_parsings:
+        f.write("%s\n" % item)
+
+PYEVALB_scorer.Scorer().evalb('gold_parsings.txt','my_parsings.txt', 'results.txt')
 
 
 

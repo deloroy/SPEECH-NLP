@@ -93,6 +93,7 @@ def case_normalizer(word, dictionary):
     return word
 
 DIGITS = re.compile("[0-9]", re.UNICODE)
+print(DIGITS)
 
 def normalize(word, word_id):
     """ Find the closest alternative in case the word is OOV."""

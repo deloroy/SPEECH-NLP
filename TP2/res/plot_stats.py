@@ -6,7 +6,9 @@ import numpy as np
 df = pd.read_csv('results.txt', delimiter='|')
 print(df.columns.values)
 length_sentences = df[" words "].values
-tag_accuracy = df[" tag_accracy "].values
+tag_accuracy = df[" prec "]
+#tag_accuracy = df[" words "].values - df[" correct_tags "].values
+#tag_accuracy = df[" tag_accracy "].values
 hist = {}
 for idx_sent in range(np.shape(length_sentences)[0]):
     length = length_sentences[idx_sent]
