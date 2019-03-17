@@ -10,6 +10,15 @@ for line in file_corpus:
 file_corpus.close()
 #print(corpus[0:10])
 
+#option :
+#see statistics
+#number of sentences of corpus text to see
+#see pylab score and execution time
+#see management of oov rules for given sentence
+#plot tree without removal of artificial symbols
+#plot tree for given sentence
+#save results in txt
+
 
 #Splitting corpus into train/dev/test set
 frac_train = 0.8
@@ -24,6 +33,7 @@ corpus_train = corpus[:nb_train]
 corpus_dev = corpus[nb_train:nb_train+nb_dev]
 corpus_test = corpus[nb_train+nb_dev:]
 
+print(str(len(corpus_test)) + " sentences in test corpus")
 
 #Building Parser
 print("Build CYK parser")
@@ -55,13 +65,16 @@ print("##############################")
 gold_parsings = []
 my_parsings = []
 
-for human_parsing in corpus_test[0:10]:
+for (idx_sentence,human_parsing) in enumerate(corpus_test[len(corpus_test)-99]):
+
+    print(human_parsing)
 
     T = postagged_sent_to_tree(human_parsing, remove_after_hyphen=True)
     gold_parsing = tree_to_postagged_sent(T) #removing functions in tags (parts after hyphen)
 
     print("")
-    print("Sentence")
+    print("Sentence N°" + str(idx_sentence))
+    print("")
 
     sent = sentence(gold_parsing)
     print(sent)
@@ -92,19 +105,20 @@ for human_parsing in corpus_test[0:10]:
     gold_tree = PYEVALB_parser.create_from_bracket_string(gold_parsing)
     test_tree = PYEVALB_parser.create_from_bracket_string(my_parsing)
     result = PYEVALB_scorer.Scorer().score_trees(gold_tree, test_tree)
-    print('Recall =' + str(result.recall))
-    print('Precision =' + str(result.prec))
+    print('Tagging accurracy ' + str(result.tag_accracy))
 
     print("##############################")
 
-with open('gold_parsings.txt', 'w') as f:
-    for item in gold_parsings:
-        f.write("%s\n" % item)
-with open('my_parsings.txt', 'w') as f:
-    for item in my_parsings:
-        f.write("%s\n" % item)
+    if idx_sentence%3==0:
 
-PYEVALB_scorer.Scorer().evalb('gold_parsings.txt','my_parsings.txt', 'results.txt')
+        with open('gold_parsings.txt', 'w') as f:
+            for item in gold_parsings:
+                f.write("%s\n" % item)
+        with open('my_parsings.txt', 'w') as f:
+            for item in my_parsings:
+                f.write("%s\n" % item)
+
+        PYEVALB_scorer.Scorer().evalb('gold_parsings.txt','my_parsings.txt', 'results.txt')
 
 
 

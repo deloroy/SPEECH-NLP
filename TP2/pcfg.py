@@ -175,16 +175,17 @@ class PCFG():
 
                     if child_tag in lexicon0.keys(): #existing rule A -> B where B is a preterminal symbol
 
-                        symbol = root_tag + "&" + child_tag
-                        self.set_artificial_symbols.add(symbol)
+                        if root_tag!="SENT":
+                            symbol = root_tag + "&" + child_tag
+                            self.set_artificial_symbols.add(symbol)
 
-                        for (word, counts2) in lexicon0[child_tag].items(): #existing rule B -> word
-                            add(self.lexicon, symbol, word, counts = counts2 * freq) #add A&B -> word, self.lexicon[word][A&B] = freq(A->B) * counts(B)
+                            for (word, counts2) in lexicon0[child_tag].items(): #existing rule B -> word
+                                add(self.lexicon, symbol, word, counts = counts2 * freq) #add A&B -> word, self.lexicon[word][A&B] = freq(A->B) * counts(B)
 
-                        for (root_tag2, rules2) in grammar0.items():
-                            for (list_tags2, counts2) in rules2.items():
-                                if (len(list_tags2) == 2) and (list_tags2[1] == root_tag): #existing rule X -> Y A
-                                    add(self.grammar, root_tag2, (list_tags2[0],symbol), counts=counts2) # add rule X -> Y A&B
+                            for (root_tag2, rules2) in grammar0.items():
+                                for (list_tags2, counts2) in rules2.items():
+                                    if (len(list_tags2) == 2) and (list_tags2[1] == root_tag): #existing rule X -> Y A
+                                        add(self.grammar, root_tag2, (list_tags2[0],symbol), counts=counts2) # add rule X -> Y A&B
 
                     else:   #existing rule A -> B where B is not a preterminal symbol
                         for (list_tags_child, counts2) in grammar0[child_tag].items():

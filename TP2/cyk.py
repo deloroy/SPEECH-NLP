@@ -4,6 +4,8 @@ from utils_tree import postagged_sent_to_tree, tree_to_postagged_sent
 from pcfg import PCFG
 from oov import OOV
 
+EPS = 10**(-10)
+
 class CYK_Parser():
 
     def __init__(self, corpus_train):
@@ -11,14 +13,33 @@ class CYK_Parser():
         self.PCFG = PCFG(corpus_train)
         self.OOV = OOV(self.PCFG.lexicon, self.PCFG.list_all_symbols, self.PCFG.freq_tokens)
 
-        # if the id of a symbol is above self.PCFG.nb_tags, its an artificial symbol added for normalization (not a gramm tag)
+        #if the id of a symbol is above self.PCFG.nb_tags, its an artificial symbol added for normalization (not a gramm tag)
         self.symbol_to_id = {symbol: i for (i, symbol) in enumerate(self.PCFG.list_all_symbols)}
 
+        #instead of storing tags, storing grammar rules with their corresponding indices (precomputings)
+        #in grammar_ids, we also store rules with an additional hierarchical level for speed up
+        #ie. self.grammar_ids[X][Y][Z] for rule X->Y,Z
+        self.grammar_ids = {}
+        for (root_tag, rules) in self.PCFG.grammar.items():
+            # root_tag is the left hand symbol of the self.PCFG.grammar rule
+            # rules are the PCFC rules for derivation of root_tag
+            idx_root_tag = self.symbol_to_id[root_tag]
+            self.grammar_ids[idx_root_tag] = {}
+            dico = {}
+            for (split, proba) in rules.items():
+                idx_left_tag = self.symbol_to_id[split[0]]
+                idx_right_tag = self.symbol_to_id[split[1]]
+                if idx_left_tag in dico.keys():
+                    dico[idx_left_tag][idx_right_tag] = proba
+                else:
+                    dico[idx_left_tag] = {idx_right_tag : proba}
+            self.grammar_ids[idx_root_tag] = dico
+
+        #for a given words, which are its tags with corresponding P(tag -> mot)
         self.lexicon_inverted = {word:{} for word in self.OOV.words_lexicon}
         for tag in self.PCFG.lexicon:
             for word in self.PCFG.lexicon[tag]:
                 self.lexicon_inverted[word][tag] = self.PCFG.lexicon[tag][word]
-
 
     def compute_CYK_tables(self, sentence, viz_oov=False):
         # (cf. https://en.wikipedia.org/wiki/CYK_algorithm)
@@ -78,34 +99,33 @@ class CYK_Parser():
             for s in range(nb_words - l):
                 # ... and starting at index s of the sentence
 
-                for cut in range(0, l):
-                    # ... and such that the symbol can rewrite as two symbols AB
-                    # with A deriving substring until index cut included, and B deriving substring from index cut+1
+                for idx_root_tag in self.grammar_ids:
+                    # ... root_tag is the symbol deriving the considered string (rule left-hand)
 
-                    for (root_tag, rules) in self.PCFG.grammar.items():
-                        # root_tag is the left hand symbol of the self.PCFG.grammar rule
-                        # rules are the PCFC rules for derivation of root_tag
+                    for cut in range(0, l):
+                        # ... such symbol can rewrite as two symbols AB
+                        # with A deriving substring until index cut included, and B deriving substring from index cut+1
 
-                        idx_root_tag = self.symbol_to_id[root_tag]
+                        for idx_left_tag in self.grammar_ids[idx_root_tag]: #left symbol A
 
-                        for (split, proba) in rules.items():
-                            # root_tag can rewrite split[0]split[1] with probability proba
+                            proba_left_derivation = max_proba_derivation[s, cut, idx_left_tag]
 
-                            idx_left_tag = self.symbol_to_id[split[0]]  # idx of left split tag
-                            idx_right_tag = self.symbol_to_id[split[1]]  # idx of right split tag
+                            if proba_left_derivation>max_proba_derivation[s, l, idx_root_tag]:
 
-                            proba_decomposition = proba
-                            proba_decomposition *= max_proba_derivation[s, cut, idx_left_tag]
-                            proba_decomposition *= max_proba_derivation[s + cut + 1, l - cut - 1, idx_right_tag]
+                                for (idx_right_tag, proba_split) in self.grammar_ids[idx_root_tag][idx_left_tag].items(): #right symbol B
 
-                            if proba_decomposition > max_proba_derivation[s, l, idx_root_tag]:
-                                # therefore, we found a new decomposition <cut,split[0],split[1]>
-                                # reaching a highest probability for root_tag to derive substring x_s...x_(s+l)
+                                    proba_right_derivation = max_proba_derivation[s + cut + 1, l - cut - 1, idx_right_tag]
 
-                                max_proba_derivation[s, l, idx_root_tag] = proba_decomposition
-                                split_reaching_max[s, l, idx_root_tag, 0] = cut
-                                split_reaching_max[s, l, idx_root_tag, 1] = idx_left_tag
-                                split_reaching_max[s, l, idx_root_tag, 2] = idx_right_tag
+                                    proba_decomposition = proba_split * proba_left_derivation * proba_right_derivation
+
+                                    if proba_decomposition > max_proba_derivation[s, l, idx_root_tag]:
+                                        # therefore, we found a new decomposition <cut,split[0],split[1]>
+                                        # reaching a highest probability for root_tag to derive substring x_s...x_(s+l)
+
+                                        max_proba_derivation[s, l, idx_root_tag] = proba_decomposition
+                                        split_reaching_max[s, l, idx_root_tag, 0] = cut
+                                        split_reaching_max[s, l, idx_root_tag, 1] = idx_left_tag
+                                        split_reaching_max[s, l, idx_root_tag, 2] = idx_right_tag
 
             # print(max_proba_derivation[:,l,:])
 
@@ -118,7 +138,7 @@ class CYK_Parser():
     def parse_substring(self, s, l, idx_root_tag, sentence, max_proba_derivation, split_reaching_max):
         # parse substring beginning at index s of sentence, of length l+1, and tagged as idx_root_tag
 
-        if l == 0:  # void string
+        if l == 0:
             return sentence[s]
 
         else:  # split enabling to reach max_proba_derivation[s,l,idx_root_tag]
@@ -147,7 +167,7 @@ class CYK_Parser():
             elif len(children)==1 and len(list(T.successors(children[0]))) == 0: pass
             else:
                 father = list(T.predecessors(node))
-                if len(father)==0: root=node
+                if len(father)==0: pass
                 else:
                     symbol = T.nodes[node]["name"]
                     if (self.symbol_to_id[symbol] >= self.PCFG.nb_tags) and ("|" in symbol):  # artificial symbol from BIN rule
@@ -163,7 +183,7 @@ class CYK_Parser():
         for node in nodes: 
             #pas la root 
             children = list(T.successors(node))
-            if len(children) == 0 or node==root: pass
+            if len(children) == 0 or len(list(T.predecessors(node))) == 0: pass
             elif len(children) == 1 and len(list(T.successors(children[0]))) == 0:
                 symbol = T.nodes[node]["name"]
 
@@ -209,11 +229,17 @@ class CYK_Parser():
 
         nb_words = len(sentence)
 
-        max_proba_derivation, split_reaching_max = self.compute_CYK_tables(sentence, viz_oov=viz_oov)
+        if nb_words>1:
+            max_proba_derivation, split_reaching_max = self.compute_CYK_tables(sentence, viz_oov=viz_oov)
+            idx_root_tag = self.symbol_to_id["SENT"]
+            parsing_list = self.parse_substring(0, nb_words - 1, idx_root_tag, sentence, max_proba_derivation, split_reaching_max)
 
-        idx_root_tag = self.symbol_to_id["SENT"]
-
-        parsing_list = self.parse_substring(0, nb_words - 1, idx_root_tag, sentence, max_proba_derivation, split_reaching_max)
+        else:
+            word = sentence[0]
+            token_to_tag = self.OOV.closest_in_corpus(word, viz_closest=viz_oov)
+            if token_to_tag is None: tag = max(self.PCFG.freq_terminal_tags,key=self.PCFG.freq_terminal_tags.get)
+            else: tag = max(self.lexicon_inverted[token_to_tag], key=self.lexicon_inverted[token_to_tag].get)
+            parsing_list = "(" + tag + " " + word + ")"
 
         if remove_artificial_symbols:
             T = postagged_sent_to_tree("( (SENT " +self.reformat_parsing(parsing_list)+"))", remove_after_hyphen=False)
