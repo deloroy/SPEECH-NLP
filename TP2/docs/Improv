@@ -1,6 +1,0 @@
-Eventually :
-
-- levenstein finite state transducer
-- when equalities of edit distance, take the one with highest bigram proba instead of unigram
-
-- p(x|word) (proba of a particular spelling correction) * p(word) instead of maximizing p(word) among spelling errors at distance 1
