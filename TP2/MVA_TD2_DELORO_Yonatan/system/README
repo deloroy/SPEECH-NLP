@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------------
+Preliminary notes :
+
+1) One should put the file 'polyglot-fr.pkl' (downloadable here https://sites.google.com/site/rmyeid/projects/polyglot)
+in the subfolder "data" of folder "system" to make the parser work (too heavy file to be transmitted through mail)
+
+2) The system uses the library networkx (==2.2) (for handling tree structure easily)
+
+------------------------------------------------------------------------------
 To parse a text stored in file "file.txt", please run in terminal :
 
 ./run.sh --inFile file.txt
@@ -21,8 +29,6 @@ Options one can potentially add:
 --vizTree : plot a visual representation of the tree. Warning: this option requires the library pygraphviz (==1.5)
 
 ------------------------------------------------------------------------------
-Note : the system uses the library networkx (==2.2) (for handling tree structure easily)
-
-------------------------------------------------------------------------------
 File "evaluation_data.parser_output" was generated running "python3 eval.py"
+
 ------------------------------------------------------------------------------
