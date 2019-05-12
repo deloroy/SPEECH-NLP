@@ -1,0 +1,38 @@
+Implementation from scratch of a probabilistic parser for French based on CYK algorithm and handling OOV.
+
+------------------------------------------------------------------------------
+Preliminary notes :
+
+1) One should put the file 'polyglot-fr.pkl' (downloadable here https://sites.google.com/site/rmyeid/projects/polyglot)
+in the subfolder "data" of folder "system" to make the parser work (too heavy file to be transmitted through mail)
+
+2) The system uses the library networkx (==2.2) (for handling tree structure easily)
+
+------------------------------------------------------------------------------
+To parse a text stored in file "file.txt", please run in terminal :
+
+./run.sh --inFile file.txt
+
+This command will build the CYK Parser using the first 80% of the training corpus of SEQUOIA, and will print the obtained parsings of the sentences of "file.txt".
+
+------------------------------------------------------------------------------
+Example :
+
+For instance, one can run : ./run.sh --inFile data/sentences_test.txt
+
+(data/sentences_test.txt contains the last 10% of the SEQUOIA corpus)
+
+------------------------------------------------------------------------------
+Options one can potentially add:
+
+--outFile : the name of the output file where to save the parsed sentences (even if this argument is not provided, the parsed sentences will print on the fly in the terminal)
+--vizTime : print the execution time for building the CYK Parser and for parsing each sentence
+--vizOOV : print the management of OOV words (closest words...)
+--vizTree : plot a visual representation of the tree. Warning: this option requires the library pygraphviz (==1.5)
+
+------------------------------------------------------------------------------
+File "evaluation_data.parser_output" was generated running "python3 eval.py"
+
+------------------------------------------------------------------------------
+
+
